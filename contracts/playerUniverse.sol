@@ -10,11 +10,12 @@ contract PlayerUniverse is Ownable {
 		players[1] = 1;
 		players[2] = 1;
 		players[3] = 1;
-		players[4] = 2;
-		players[5] = 3;
-		players[6] = 2;
+		players[4] = 1;
+		players[5] = 1;
+		players[6] = 1;
+		players[7] = 1;
 	}
-	function getPlayerPosition(uint _playerId) returns (uint) {
+	function getPlayerPosition(uint _playerId) public returns (uint) {
 		return players[_playerId];
 	}
 }

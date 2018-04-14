@@ -11,9 +11,9 @@ contract League is Ownable{
 	string public jackpotStyle;
 	uint public draftTime;
 	string public draftStyle;
-	mapping (address => string) teams;
-	mapping (uint => bool) draftedPlayers;
-	mapping (uint => address) draftOrder;
+	mapping (address => string) public teams;
+	mapping (uint => bool) public draftedPlayers;
+	mapping (uint => address) public draftOrder;
 	uint public draftRound = 1;
 	uint public draftPick = 1;
 	uint public teamCount = 1;
@@ -36,7 +36,7 @@ contract League is Ownable{
 		allPlayers = PlayerUniverse(_playerUniverse);
 
 	}
-
+	
 	//returns is the draft is within 1 hour or not
 	function draftNotStarted() 
 	private 
@@ -51,7 +51,7 @@ contract League is Ownable{
 	returns (bool) 
 	{
 
-		return (now > draftTime);
+		return (now >= draftTime);
 	}
 
 	function usersPick(address _team) public returns (bool) {
@@ -84,26 +84,28 @@ contract League is Ownable{
 	// 	uint position = allPlayers.getPlayerPosition(_playerId);
 	// 	Team team = Team(_team);
 	// 	if (position == 1) {
-	// 		return (team.Roster.QB() == 0);
+	// 		return (team.getPlayer("QB") == 0);
+	// 	} else if (position == 2) {
+	// 		return (team.getPlayer("RB") == 0 || team.getPlayer("RB2") == 0 || team.getPlayer("FLEX") == 0);
 	// 	}
 	// }
 
-	// function draftPlayer(uint _playerId) public returns (bool) {
-	// 	// require(draftStarted());
-	// 	require(!draftedPlayers[_playerId]);
-	// 	require(depthChartAvailability());
-	// 	// require(usersPick(msg.sender));
+	function draftPlayer(uint _playerId) public returns (bool) {
+		require(draftStarted());
+		require(!draftedPlayers[_playerId]);
+		// require(depthChartAvailability(_playerId, msg.sender));
+		// require(usersPick(msg.sender));
 
-	// 	draftedPlayers[_playerId] = true;
-	// 	if (draftPick >= teamCount) {
-	// 		draftRound += 1;
-	// 		draftPick = 1;
-	// 	} else {
-	// 		draftPick += 1; 
-	// 	}
-	// 	return true;
+		draftedPlayers[_playerId] = true;
+		if (draftPick >= teamCount) {
+			draftRound += 1;
+			draftPick = 1;
+		} else {
+			draftPick += 1; 
+		}
+		return true;
 
-	// }
+	}
 
 	function () payable {
 		require (teamCount < leagueSize);

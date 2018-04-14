@@ -38,17 +38,37 @@ contract('Team', function(accounts) {
 		(await this.leagueContract.allPlayers()).should.be.bignumber.equal(this.playersContract.address);
 	})
 })
-// contract("Team Draft", function(accounts) {
-// 	const commissioner = accounts[0];
-// 	beforeEach(async function() {
-// 		this.playersContract = await players.new();
-// 		this.draftTime = latestTime() + duration.weeks(1);
-// 		this.leagueContract = await league.new("TestLeague", 10, ether(1), "winner-take-all", this.draftTime, "serpentine", this.playersContract.address, {from: accounts[0]});
-// 		this.teamContract = await team.new("testTeam", {from: accounts[1]});
-// 		await this.teamContract.joinLeague(this.leagueContract.address, {from: accounts[1], value: ether(1)}).should.be.fulfilled;
-// 	})
-// 	it('Drafts a Quarterback', async function() {
-// 		await this.teamContract.draftPlayer(1, {from: accounts[1]}).should.be.fulfilled;
-		
-// 	})
-// })
+contract("Team Draft", function(accounts) {
+	const commissioner = accounts[0];
+	beforeEach(async function() {
+		this.playersContract = await players.new();
+		this.draftTime = latestTime() + duration.weeks(1);
+		this.leagueContract = await league.new("TestLeague", 10, ether(1), "winner-take-all", this.draftTime, "serpentine", this.playersContract.address, {from: accounts[0]});
+		this.teamContract = await team.new("testTeam", {from: accounts[1]});
+		await this.teamContract.joinLeague(this.leagueContract.address, {from: accounts[1], value: ether(1)}).should.be.fulfilled;
+		await increaseTimeTo(this.draftTime);
+	})
+	it('Drafts a Quarterback', async function() {
+		await this.teamContract.draftPlayer(1, {from: accounts[1]}).should.be.fulfilled;
+		(await this.teamContract.getPlayer.call("QB")).should.be.bignumber.equal(1);
+		(await this.leagueContract.draftedPlayers.call(1)).should.be.equal(true);
+	})
+	it("Returns accurate checks for undrafted players", async function() {
+		(await this.teamContract.getPlayer.call("QB")).should.be.bignumber.equal(0);
+		(await this.leagueContract.draftedPlayers.call(1)).should.be.equal(false);
+	})
+	it("Rejects drafting a 5th Quarterback", async function() {
+		await this.teamContract.draftPlayer(1, {from: accounts[1]}).should.be.fulfilled;
+		(await this.teamContract.getPlayer.call("QB")).should.be.bignumber.equal(1);
+		await this.teamContract.draftPlayer(2, {from: accounts[1]}).should.be.fulfilled;
+		await this.teamContract.draftPlayer(3, {from: accounts[1]}).should.be.fulfilled;
+		await this.teamContract.draftPlayer(4, {from: accounts[1]}).should.be.fulfilled;
+		(await this.teamContract.getPlayer.call("QB")).should.be.bignumber.equal(1);
+		(await this.leagueContract.draftedPlayers.call(1)).should.be.equal(true);
+		await this.teamContract.draftPlayer(5, {from: accounts[1]}).should.be.rejectedWith(EVMExcept);
+
+	})
+})
+
+
+
