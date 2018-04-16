@@ -6,7 +6,9 @@ import latestTime from './helpers/latestTime'
 import EVMExcept from './helpers/EVMexcept'
 
 const league = artifacts.require("League.sol");
+const team = artifacts.require("Team.sol");
 const players = artifacts.require("PlayerUniverse.sol");
+const Commissioner = artifacts.require("Commissioner.sol");
 
 const BigNumber = web3.BigNumber;
 const should = require('chai')
@@ -18,8 +20,9 @@ contract('League Parameter Checks', function(accounts) {
 	it('Should reflect proper arguments', async function() {
 		this.playersContract = await players.new();
 		this.draftTime = latestTime() + duration.weeks(1);
-		this.leagueContract = await league.new("TestLeague", 10, ether(1), "winner-take-all", this.draftTime, "serpentine", this.playersContract.address);
-
+		// this.leagueContract = await league.new("TestLeague", 10, ether(1), "winner-take-all", this.draftTime, "serpentine", this.playersContract.address);
+		this.commissionerContract = await Commissioner.new("TestTeam", "TestLeague", 10, ether(1), "winner-take-all", this.draftTime, "serpentine", this.playersContract.address, {from: accounts[0], value: ether(1)}).should.be.fulfilled;
+		this.leagueContract = await league.at(await this.commissionerContract.leagueAddress());
 		(await this.leagueContract.name()).should.be.equal("TestLeague");
 		(await this.leagueContract.leagueSize()).should.be.bignumber.equal(10);
 		(await this.leagueContract.buyIn()).should.be.bignumber.equal(ether(1));
@@ -34,11 +37,13 @@ contract('League Changing draft time', function(accounts) {
 	beforeEach(async function() {
 		this.playersContract = await players.new();
 		this.draftTime = latestTime() + duration.weeks(1);
-		this.newDraftTime = this.draftTime + duration.days(2)
-		this.leagueContract = await league.new("TestLeague", 10, ether(1), "winner-take-all", this.draftTime, "serpentine", this.playersContract.address, {from: accounts[0]});
+		this.newDraftTime = this.draftTime + duration.days(2);
+		this.commissionerContract = await Commissioner.new("TestTeam", "TestLeague", 10, ether(1), "winner-take-all", this.draftTime, "serpentine", this.playersContract.address, {from: accounts[0], value: ether(1)}).should.be.fulfilled;
+		this.leagueContract = await league.at(await this.commissionerContract.leagueAddress());
+		// this.leagueContract = await league.new("TestLeague", 10, ether(1), "winner-take-all", this.draftTime, "serpentine", this.playersContract.address, {from: accounts[0]});
 	})
 	it('Allows owner to change draftTime', async function() {
-		await this.leagueContract.changeDraftTime(this.newDraftTime, {from: accounts[0]}).should.be.fulfilled;
+		await this.commissionerContract.changeDraftTime(this.newDraftTime, {from: accounts[0]}).should.be.fulfilled;
 		(await this.leagueContract.draftTime()).should.be.bignumber.equal(this.newDraftTime);
 	})
 	it('Rejects a change if the draft is within 1 hour', async function() {
@@ -55,7 +60,9 @@ contract('League is joinable', function(accounts) {
 	beforeEach(async function() {
 		this.playersContract = await players.new();
 		this.draftTime = latestTime() + duration.days(8);
-		this.leagueContract = await league.new("TestLeague", 5, ether(1), "winner-take-all", this.draftTime, "serpentine", this.playersContract.address, {from: accounts[0]});
+		this.commissionerContract = await Commissioner.new("TestTeam", "TestLeague", 5, ether(1), "winner-take-all", this.draftTime, "serpentine", this.playersContract.address, {from: accounts[0], value: ether(1)}).should.be.fulfilled;
+		this.leagueContract = await league.at(await this.commissionerContract.leagueAddress());
+		// this.leagueContract = await league.new("TestLeague", 5, ether(1), "winner-take-all", this.draftTime, "serpentine", this.playersContract.address, {from: accounts[0]});
 	})
 	it('Allows a user to join the league', async function() {
 		await this.leagueContract.joinLeague("testTeam1", {from: accounts[1], value: ether(1)}).should.be.fulfilled;
@@ -90,4 +97,37 @@ contract('League is joinable', function(accounts) {
 
 	// })
 })
+// contract('League: Draft Order', function(accounts) {
+// 	beforeEach(async function() {
+// 		this.playersContract = await players.new();
+// 		this.draftTime = latestTime() + duration.weeks(1);
+// 		this.leagueContract = await league.new("TestLeague", 6, ether(1), "winner-take-all", this.draftTime, "serpentine", this.playersContract.address, {from: accounts[0]});
+
+// 		this.teamContract1 = await team.new("testTeam1", {from: accounts[1]});
+// 		await this.teamContract1.joinLeague(this.leagueContract.address, {from: accounts[1], value: ether(1)}).should.be.fulfilled;
+
+// 		this.teamContract2 = await team.new("testTeam2", {from: accounts[2]});
+// 		await this.teamContract2.joinLeague(this.leagueContract.address, {from: accounts[2], value: ether(1)}).should.be.fulfilled;
+
+// 		this.teamContract3 = await team.new("testTeam3", {from: accounts[3]});
+// 		await this.teamContract3.joinLeague(this.leagueContract.address, {from: accounts[3], value: ether(1)}).should.be.fulfilled;
+
+// 		this.teamContract4 = await team.new("testTeam4", {from: accounts[4]});
+// 		await this.teamContract4.joinLeague(this.leagueContract.address, {from: accounts[4], value: ether(1)}).should.be.fulfilled;
+
+// 		this.teamContract5 = await team.new("testTeam5", {from: accounts[5]});
+// 		await this.teamContract5.joinLeague(this.leagueContract.address, {from: accounts[5], value: ether(1)}).should.be.fulfilled;
+
+// 		// await increaseTimeTo(this.draftTime);
+// 	})
+
+// 	it("Sets the draft order", async function() {
+// 		await this.leagueContract.setDraftOrder({from: accounts[0]}).should.be.fulfilled;
+// 		(await this.leagueContract.draftOrder(1)).should.be.bignumber;
+// 		(await this.leagueContract.draftOrder(2)).should.be.bignumber;
+// 		(await this.leagueContract.draftOrder(3)).should.be.bignumber;
+// 		(await this.leagueContract.draftOrder(4)).should.be.bignumber;
+// 		(await this.leagueContract.draftOrder(5)).should.be.bignumber;
+// 	})
+// })
 
