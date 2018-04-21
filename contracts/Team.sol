@@ -52,13 +52,19 @@ contract Team is Ownable {
 	// function updateRoster(uint _playerId) {
 	// 	uint position = allPlayers.pla
 	// }
-	function addPlayer(uint _playerId, string _position)
+	function auctionBlock(uint _playerId, uint bid) public onlyOwner{
+		myLeague.draftPlayer(_playerId, bid);
+	}
+	function auctionBid(uint _bid) public onlyOwner {
+		myLeague.bid(_bid);
+	}
+	function addPlayer(uint _playerId, string _position) public
 	{
 
-		require(myLeague.draftPlayer(_playerId));
+		// require(myLeague.draftPlayer(_playerId));
 		Roster[_position] = _playerId;
 	}
-	function draftPlayer(uint _playerId) public onlyOwner {
+	function draftedPlayer(uint _playerId) public {
 
 		uint position = allPlayers.getPlayerPosition(_playerId);
 		if (position == 1) {
@@ -144,7 +150,7 @@ contract Team is Ownable {
 				throw;
 			}
 		} else {
-				throw;
+			throw;
 		}
 		// updateRoster(_playerId);
 
